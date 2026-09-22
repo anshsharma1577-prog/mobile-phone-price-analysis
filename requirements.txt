@@ -1,0 +1,4 @@
+# R package dependencies
+rmarkdown
+knitr
+ggplot2

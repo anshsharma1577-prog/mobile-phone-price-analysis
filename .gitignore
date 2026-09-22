@@ -1,0 +1,10 @@
+# R / RStudio
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+.Rproj.user/
+
+# Temporary files
+*.tmp
+*.log

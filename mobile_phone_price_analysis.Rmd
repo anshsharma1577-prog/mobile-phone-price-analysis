@@ -1,0 +1,317 @@
+---
+title: "Mobile Phone Price Analysis Using R"
+author: "Ansh Sharma"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: cosmo
+---
+
+# 1. Introduction
+
+Mobile phones are available in a wide range of prices and specifications. This project uses R to explore a sample dataset of mobile phones and study how specifications such as RAM, storage, battery capacity and rating are related to price.
+
+The main objectives are to import and clean the data, calculate descriptive statistics, create graphs, examine relationships between variables, and interpret the results.
+
+> **Dataset note:** The CSV included with this project is a curated sample dataset prepared for academic demonstration. Prices and specifications should be treated as sample analytical data, not as a live market-price database.
+
+# 2. Required Packages
+
+```{r setup, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+if (!requireNamespace("ggplot2", quietly = TRUE)) {
+  stop("Please install ggplot2 using install.packages('ggplot2') before knitting.")
+}
+
+library(ggplot2)
+```
+
+The project uses `ggplot2` for clear and readable visualizations.
+
+# 3. Importing the Dataset
+
+```{r import-data}
+mobile_data <- read.csv("data/mobile_phone_data.csv",
+                        stringsAsFactors = FALSE)
+
+head(mobile_data)
+```
+
+The `read.csv()` function imports the CSV file. The relative path makes the project portable when the complete folder is uploaded to GitHub.
+
+# 4. Understanding the Dataset
+
+```{r structure}
+str(mobile_data)
+```
+
+```{r dimensions}
+cat("Number of rows:", nrow(mobile_data), "\n")
+cat("Number of columns:", ncol(mobile_data), "\n")
+```
+
+```{r summary}
+summary(mobile_data)
+```
+
+The dataset contains brand and model information along with numerical specifications such as price, RAM, storage, battery, camera resolution, display size and rating.
+
+# 5. Data Preprocessing and Cleaning
+
+## 5.1 Checking Missing Values
+
+```{r missing-values}
+colSums(is.na(mobile_data))
+```
+
+The result is checked to make sure that the important analytical variables do not contain missing values.
+
+## 5.2 Checking Duplicate Records
+
+```{r duplicates}
+sum(duplicated(mobile_data))
+```
+
+Duplicate rows can affect statistical results, so they are checked before analysis.
+
+## 5.3 Checking Data Types
+
+```{r data-types}
+sapply(mobile_data, class)
+```
+
+The data types are reviewed to make sure that numerical variables can be used for statistical calculations.
+
+## 5.4 Basic Cleaning
+
+```{r cleaning}
+mobile_data$Brand <- trimws(mobile_data$Brand)
+mobile_data$Model <- trimws(mobile_data$Model)
+
+mobile_data$Price <- as.numeric(mobile_data$Price)
+mobile_data$RAM <- as.numeric(mobile_data$RAM)
+mobile_data$Storage <- as.numeric(mobile_data$Storage)
+mobile_data$Battery <- as.numeric(mobile_data$Battery)
+mobile_data$Camera <- as.numeric(mobile_data$Camera)
+mobile_data$Display_Size <- as.numeric(mobile_data$Display_Size)
+mobile_data$Rating <- as.numeric(mobile_data$Rating)
+
+mobile_data <- mobile_data[complete.cases(mobile_data), ]
+
+cat("Rows after cleaning:", nrow(mobile_data))
+```
+
+The cleaning step removes leading/trailing spaces and ensures that analytical columns are numeric. Complete records are retained for the analysis.
+
+# 6. Statistical Analysis
+
+## 6.1 Descriptive Statistics
+
+```{r descriptive-statistics}
+numeric_data <- mobile_data[, c("Price", "RAM", "Storage",
+                                "Battery", "Camera",
+                                "Display_Size", "Rating")]
+
+stats_table <- data.frame(
+  Variable = names(numeric_data),
+  Mean = sapply(numeric_data, mean),
+  Median = sapply(numeric_data, median),
+  Variance = sapply(numeric_data, var),
+  Standard_Deviation = sapply(numeric_data, sd)
+)
+
+knitr::kable(stats_table,
+             digits = 2,
+             caption = "Descriptive Statistics")
+```
+
+Mean gives the average value, median gives the middle value, variance measures spread, and standard deviation shows how much values vary around the mean.
+
+## 6.2 Price by Brand
+
+```{r brand-price-summary}
+brand_summary <- aggregate(Price ~ Brand, data = mobile_data, FUN = mean)
+brand_summary <- brand_summary[order(-brand_summary$Price), ]
+
+knitr::kable(brand_summary,
+             digits = 2,
+             caption = "Average Price by Brand")
+```
+
+This table compares the average sample price across brands. Differences may reflect the range of models represented by each brand.
+
+# 7. Data Visualization
+
+## 7.1 Price Distribution
+
+```{r price-distribution, fig.width=7, fig.height=4.5}
+ggplot(mobile_data, aes(x = Price)) +
+  geom_histogram(bins = 10, fill = "steelblue", color = "white") +
+  labs(title = "Distribution of Mobile Phone Prices",
+       x = "Price (INR)", y = "Number of Phones") +
+  theme_minimal()
+```
+
+The histogram shows how the sample phones are distributed across price ranges. A wider spread indicates that the dataset contains both budget and premium phones.
+
+## 7.2 Average Price by Brand
+
+```{r price-by-brand, fig.width=8, fig.height=5}
+ggplot(brand_summary,
+       aes(x = reorder(Brand, Price), y = Price)) +
+  geom_col(fill = "darkorange") +
+  coord_flip() +
+  labs(title = "Average Mobile Phone Price by Brand",
+       x = "Brand", y = "Average Price (INR)") +
+  theme_minimal()
+```
+
+The bar chart makes it easier to compare the average sample price of different brands.
+
+## 7.3 RAM Distribution
+
+```{r ram-distribution, fig.width=7, fig.height=4.5}
+ggplot(mobile_data, aes(x = RAM)) +
+  geom_histogram(binwidth = 2, fill = "seagreen", color = "white") +
+  labs(title = "Distribution of RAM",
+       x = "RAM (GB)", y = "Number of Phones") +
+  theme_minimal()
+```
+
+The RAM distribution shows which memory configurations are common in the sample.
+
+## 7.4 Storage Distribution
+
+```{r storage-distribution, fig.width=7, fig.height=4.5}
+ggplot(mobile_data, aes(x = Storage)) +
+  geom_bar(fill = "mediumpurple") +
+  labs(title = "Storage Configuration Distribution",
+       x = "Storage (GB)", y = "Number of Phones") +
+  theme_minimal()
+```
+
+The graph shows how frequently different storage capacities occur.
+
+## 7.5 RAM vs Price
+
+```{r ram-price, fig.width=7, fig.height=4.5}
+ggplot(mobile_data, aes(x = RAM, y = Price)) +
+  geom_point(size = 3, alpha = 0.75) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Relationship Between RAM and Price",
+       x = "RAM (GB)", y = "Price (INR)") +
+  theme_minimal()
+```
+
+The scatter plot helps identify whether phones with higher RAM tend to have higher prices in the sample. The fitted line summarizes the overall linear trend but does not prove that RAM alone causes price differences.
+
+## 7.6 Storage vs Price
+
+```{r storage-price, fig.width=7, fig.height=4.5}
+ggplot(mobile_data, aes(x = Storage, y = Price)) +
+  geom_point(size = 3, alpha = 0.75) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Relationship Between Storage and Price",
+       x = "Storage (GB)", y = "Price (INR)") +
+  theme_minimal()
+```
+
+This plot examines whether larger storage capacity is associated with higher sample prices.
+
+## 7.7 Battery vs Price
+
+```{r battery-price, fig.width=7, fig.height=4.5}
+ggplot(mobile_data, aes(x = Battery, y = Price)) +
+  geom_point(size = 3, alpha = 0.75) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Relationship Between Battery Capacity and Price",
+       x = "Battery (mAh)", y = "Price (INR)") +
+  theme_minimal()
+```
+
+Battery capacity is compared with price to see whether a simple relationship is visible in the sample.
+
+## 7.8 Price vs Rating
+
+```{r rating-price, fig.width=7, fig.height=4.5}
+ggplot(mobile_data, aes(x = Rating, y = Price)) +
+  geom_point(size = 3, alpha = 0.75) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Relationship Between Rating and Price",
+       x = "Rating", y = "Price (INR)") +
+  theme_minimal()
+```
+
+The graph compares user-rating values in the sample with phone prices. Rating and price may move together in the sample, but the relationship can also be affected by brand, model category and specifications.
+
+# 8. Correlation Analysis
+
+```{r correlations}
+correlation_matrix <- cor(
+  mobile_data[, c("Price", "RAM", "Storage",
+                  "Battery", "Camera",
+                  "Display_Size", "Rating")]
+)
+
+knitr::kable(round(correlation_matrix, 2),
+             caption = "Correlation Matrix")
+```
+
+Correlation values range from -1 to +1. Values closer to +1 indicate a stronger positive linear relationship, values closer to -1 indicate a stronger negative relationship, and values near 0 indicate a weak linear relationship.
+
+## 8.1 Key Correlations with Price
+
+```{r price-correlations}
+price_correlations <- correlation_matrix["Price", ]
+price_correlations <- sort(price_correlations, decreasing = TRUE)
+
+knitr::kable(round(price_correlations, 2),
+             caption = "Correlation of Variables with Price")
+```
+
+This table provides a quick view of which numerical variables have stronger linear association with price in this sample.
+
+# 9. Findings
+
+```{r findings}
+avg_price <- mean(mobile_data$Price)
+median_price <- median(mobile_data$Price)
+ram_price_cor <- cor(mobile_data$RAM, mobile_data$Price)
+storage_price_cor <- cor(mobile_data$Storage, mobile_data$Price)
+
+cat("Average price:", round(avg_price, 2), "INR\n")
+cat("Median price:", round(median_price, 2), "INR\n")
+cat("RAM-Price correlation:", round(ram_price_cor, 2), "\n")
+cat("Storage-Price correlation:", round(storage_price_cor, 2), "\n")
+```
+
+The analysis can be summarized as follows:
+
+1. The sample contains phones across budget, mid-range and premium price levels.
+2. Price varies substantially across the selected models.
+3. RAM and storage can show positive relationships with price in the sample, but they are not the only factors affecting price.
+4. Brand, camera, battery, display and product positioning can also contribute to price differences.
+5. Correlation describes association, not causation.
+
+# 10. Conclusion
+
+This project demonstrates how R can be used for a complete data-analysis workflow. The mobile-phone dataset was imported from CSV, inspected, cleaned and statistically explored. Descriptive statistics and visualizations were then used to understand price distribution and relationships between price and selected specifications.
+
+The project also demonstrates the importance of interpreting graphs and correlation values rather than looking only at raw numbers. Because the dataset is a curated academic sample, the findings should be treated as an analytical demonstration rather than a real-time market study.
+
+# 11. Future Scope
+
+The project can be extended by adding more phones and additional variables such as processor, refresh rate, operating system, launch year, discount and customer-review count. A larger real-world dataset could also be used for regression or machine-learning models to estimate phone prices.
+
+# 12. Reproducibility
+
+The project uses a relative dataset path:
+
+```{r}
+cat("Dataset path: data/mobile_phone_data.csv\n")
+```
+
+Keep the `.Rmd` file and the `data` folder in the same project directory before knitting the report.
