@@ -1,7 +1,7 @@
 ---
 title: "Mobile Phone Price Analysis Using R"
 author: "Ansh Sharma"
-date: "`r Sys.Date()`"
+date: "`2026-09-22`"
 output:
   html_document:
     toc: true
